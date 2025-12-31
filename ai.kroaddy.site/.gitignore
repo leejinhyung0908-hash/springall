@@ -1,0 +1,55 @@
+# --- Python 기본 ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.venv/
+venv/
+ENV/
+
+# --- 모델 파일 ---
+# 학습된 모델 pkl은 용량도 크고 외부 공개 위험 O
+*.pkl
+*.pickle
+
+# --- 데이터 파일 ---
+# 실제 추론 입력용 데이터 or 대용량 로그 파일
+*.csv
+*.tsv
+*.xlsx
+*.jsonl
+
+# --- 로그, 캐시 ---
+logs/
+*.log
+cache/
+*.cache
+
+# --- 모델 압축 파일 ---
+*.tar
+*.gz
+*.zip
+
+# --- Docker ---
+/docker/
+*.dockerfile
+*.img
+
+# --- 시스템 파일 ---
+.DS_Store
+Thumbs.db
+
+# --- 가상환경에서 생성되는 기타 ---
+pip-selfcheck.json
+
+# --- 환경 변수 파일 ---
+.env.local
+.env.*.local
+
+# --- 시블링 폴더의 .env 파일 (참고용, 루트 .gitignore에서 관리) ---
+# ../feed.kroaddy.site/.env
+# ../rag.kroaddy.site/.env
+# ../www.kroaddy.site/.env
+# ../api.kroaddy.site/.env

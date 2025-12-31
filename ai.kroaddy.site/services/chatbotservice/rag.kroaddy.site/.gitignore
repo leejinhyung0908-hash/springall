@@ -1,0 +1,34 @@
+# 환경 변수
+.env
+
+# 벡터 DB
+vector_db/
+*.faiss
+*.pkl
+
+# 데이터
+data/
+*.pdf
+*.docx
+*.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 로그
+*.log
+logs/
+

@@ -1,0 +1,13 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+requests
+httpx
+aiohttp
+beautifulsoup4
+lxml
+html5lib
+selenium
+playwright
+apscheduler==3.10.4
+geopy
+

@@ -1,0 +1,15 @@
+{
+  "id": "d3be3bd0a0f948a98662b5475fb9938d",
+  "created_at": "2025-12-29T06:35:36.479229Z",
+  "model_id": "stabilityai/sdxl-turbo",
+  "prompt": "browneyed soul naul",
+  "negative_prompt": null,
+  "width": 768,
+  "height": 768,
+  "steps": 4,
+  "guidance_scale": 0.0,
+  "seed": null,
+  "device": "cuda",
+  "image_file": "d3be3bd0a0f948a98662b5475fb9938d.png",
+  "meta_file": "d3be3bd0a0f948a98662b5475fb9938d.json"
+}

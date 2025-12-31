@@ -1,0 +1,15 @@
+{
+  "id": "39a9eda003d74612884bb28a635d3bea",
+  "created_at": "2025-12-29T06:06:05.610341Z",
+  "model_id": "stabilityai/sdxl-turbo",
+  "prompt": "a cute robot barista",
+  "negative_prompt": null,
+  "width": 768,
+  "height": 768,
+  "steps": 4,
+  "guidance_scale": 0.0,
+  "seed": null,
+  "device": "cuda",
+  "image_file": "39a9eda003d74612884bb28a635d3bea.png",
+  "meta_file": "39a9eda003d74612884bb28a635d3bea.json"
+}

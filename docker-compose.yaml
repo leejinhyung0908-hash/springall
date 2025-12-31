@@ -1,0 +1,569 @@
+# ============================================================================
+# 통합 Docker Compose 설정
+# ============================================================================
+# Neon PostgreSQL + Upstash Redis 연동
+# profiles를 통해 서비스 그룹을 선택적으로 실행할 수 있습니다.
+#
+# 사용 예시:
+#   - 기본 스택 실행 (gateway + auth-service + user-service):
+#     docker compose up
+#
+#   - ERP 서비스 포함:
+#     docker compose --profile erp up
+#
+#   - AI 서비스 포함:
+#     docker compose --profile ai up
+#
+#   - 모든 서비스:
+#     docker compose --profile erp --profile ai up
+#
+#   - 백그라운드 실행:
+#     docker compose up -d
+#     docker compose --profile erp --profile ai up -d
+#
+# 주의사항:
+#   1. Docker Desktop이 실행 중이어야 합니다.
+#   2. 루트 디렉토리에 .env 파일 생성 (Neon PostgreSQL과 Upstash Redis 정보 설정)
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ========================================================================
+  # Gateway Service (Spring Boot)
+  # ========================================================================
+  api-gateway:
+    build:
+      context: ./api.kroaddy.site
+      dockerfile: ./Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - kroaddy-network
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-default}
+      - SPRING_DATA_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - SPRING_DATA_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - SPRING_DATA_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - SPRING_DATA_REDIS_SSL_ENABLED=true
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - NAVER_REDIRECT_URI=${NAVER_REDIRECT_URI}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - FRONT_LOGIN_CALLBACK_URL=${FRONT_LOGIN_CALLBACK_URL:-http://localhost:3000}
+    env_file:
+      - .env
+    restart: on-failure
+
+  # ========================================================================
+  # Auth Service (Spring Boot)
+  # ========================================================================
+  auth-service:
+    build:
+      context: ./service.kroaddy.site
+      dockerfile: ./auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    networks:
+      - kroaddy-network
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-default}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      - SPRING_DATA_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - SPRING_DATA_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - SPRING_DATA_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - SPRING_DATA_REDIS_SSL_ENABLED=true
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - NAVER_REDIRECT_URI=${NAVER_REDIRECT_URI}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - FRONT_LOGIN_CALLBACK_URL=http://localhost:4000
+    env_file:
+      - .env
+    restart: on-failure
+
+  # ========================================================================
+  # User Service (Spring Boot)
+  # ========================================================================
+  user-service:
+    build:
+      context: ./service.kroaddy.site
+      dockerfile: ./user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "8082:8082"
+    networks:
+      - kroaddy-network
+    environment:
+      - SERVER_PORT=8082
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-default}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+    env_file:
+      - .env
+    restart: on-failure
+
+  # ========================================================================
+  # ERP Services (FastAPI)
+  # ========================================================================
+  customerservice:
+    build:
+      context: ./erp.kroaddy.site
+      dockerfile: ./customerservice/Dockerfile
+    container_name: customerservice
+    ports:
+      - "9009:9009"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=${REDIS_SSL_ENABLED:-true}
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - erp
+    restart: on-failure
+
+  dashboardservice:
+    build:
+      context: ./erp.kroaddy.site
+      dockerfile: ./dashboardservice/Dockerfile
+    container_name: dashboardservice
+    ports:
+      - "9008:9008"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - erp
+    restart: on-failure
+
+  orderservice:
+    build:
+      context: ./erp.kroaddy.site
+      dockerfile: ./orderservice/Dockerfile
+    container_name: orderservice
+    ports:
+      - "9007:9007"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - erp
+    restart: on-failure
+
+  reportservice:
+    build:
+      context: ./erp.kroaddy.site
+      dockerfile: ./reportservice/Dockerfile
+    container_name: reportservice
+    ports:
+      - "9006:9006"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - erp
+    restart: on-failure
+
+  settingservice:
+    build:
+      context: ./erp.kroaddy.site
+      dockerfile: ./settingservice/Dockerfile
+    container_name: settingservice
+    ports:
+      - "9005:9005"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - erp
+    restart: on-failure
+
+  stockservice:
+    build:
+      context: ./erp.kroaddy.site
+      dockerfile: ./stockservice/Dockerfile
+    container_name: stockservice
+    ports:
+      - "9011:9011"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - erp
+    restart: on-failure
+
+  # ========================================================================
+  # AI Services (FastAPI)
+  # ========================================================================
+  ai-gateway:
+    build:
+      context: ./ai.kroaddy.site/gateway
+      dockerfile: ./Dockerfile
+    container_name: ai-gateway
+    ports:
+      - "9000:9000"
+    networks:
+      - kroaddy-network
+    environment:
+      - FEED_SERVICE_URL=http://feed-service:9003
+      - RAG_SERVICE_URL=http://rag-service:9002
+      - CHATBOT_SERVICE_URL=http://chatbot-service:9004
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    depends_on:
+      - feed-service
+      - rag-service
+      - chatbot-service
+    profiles:
+      - ai
+    restart: on-failure
+
+  feed-service:
+    build:
+      context: ./ai.kroaddy.site/services/crawlerservice/feed.kroaddy.site
+    container_name: feed-service
+    ports:
+      - "9003:9003"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - ai
+    restart: on-failure
+
+  rag-service:
+    build:
+      context: ./ai.kroaddy.site/services/chatbotservice/rag.kroaddy.site
+    container_name: rag-service
+    ports:
+      - "9002:9002"
+    networks:
+      - kroaddy-network
+    volumes:
+      - ./ai.kroaddy.site/services/chatbotservice/rag.kroaddy.site/vector_db:/app/vector_db
+      - ./ai.kroaddy.site/services/chatbotservice/rag.kroaddy.site/data:/app/data
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - ai
+    restart: on-failure
+
+  crawler-service:
+    build:
+      context: ./ai.kroaddy.site/services/crawlerservice
+    container_name: crawler-service
+    ports:
+      - "9001:9001"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - ai
+    restart: on-failure
+
+  chatbot-service:
+    build:
+      context: ./ai.kroaddy.site/services/chatbotservice
+    container_name: chatbot-service
+    ports:
+      - "9004:9004"
+    networks:
+      - kroaddy-network
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    profiles:
+      - ai
+    restart: on-failure
+
+  ml-service:
+    build:
+      context: ./ai.kroaddy.site/services/mlservice
+    container_name: ml-service
+    ports:
+      - "9010:9010"
+    networks:
+      - kroaddy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - UPSTASH_REDIS_URL=${UPSTASH_REDIS_URL}
+      - UPSTASH_REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - UPSTASH_REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - UPSTASH_REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_URL=${UPSTASH_REDIS_URL}
+      - REDIS_HOST=${UPSTASH_REDIS_HOST}
+      - REDIS_PORT=${UPSTASH_REDIS_PORT}
+      - REDIS_PASSWORD=${UPSTASH_REDIS_PASSWORD}
+      - REDIS_SSL_ENABLED=true
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY:-}
+    env_file:
+      - .env
+    volumes:
+      - ./ai.kroaddy.site/services/mlservice/app/save:/app/app/save
+    profiles:
+      - ai
+    restart: on-failure
+
+# ========================================================================
+# Networks
+# ========================================================================
+networks:
+  kroaddy-network:
+    driver: bridge
+    name: kroaddy-network
+
+# ========================================================================
+# 사용법
+# ========================================================================
+# 1. .env 파일 생성: 루트 디렉토리에 .env 파일 생성
+# 2. Neon PostgreSQL과 Upstash Redis 정보 입력
+# 3. 기본 서비스 실행: docker compose up
+# 4. ERP 서비스 포함: docker compose --profile erp up
+# 5. AI 서비스 포함: docker compose --profile ai up
+# 6. 모든 서비스: docker compose --profile erp --profile ai up
+#
+# 로그 확인:
+#   - 포그라운드 실행 시 자동으로 로그 표시: docker compose up
+#   - 특정 서비스 로그만 보기: docker compose --profile ai up ml-service
+#   - 백그라운드 실행 후 로그 보기: docker compose --profile ai logs -f ml-service
+#   - 모든 서비스 로그 보기: docker compose logs -f
+#   - 특정 서비스 로그만 보기: docker compose --profile ai logs -f ml-service
+# ========================================================================
