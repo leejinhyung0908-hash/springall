@@ -1,3 +1,6 @@
 [submodule "springapi"]
 	path = springapi
 	url = https://github.com/leejinhyung0908-hash/springapi.git
+[submodule "springvision"]
+	path = springvision
+	url = https://github.com/leejinhyung0908-hash/springvision.git
