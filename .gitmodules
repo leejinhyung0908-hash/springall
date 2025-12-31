@@ -1,0 +1,3 @@
+[submodule "springapi"]
+	path = springapi
+	url = https://github.com/leejinhyung0908-hash/springapi.git
