@@ -4,3 +4,6 @@
 [submodule "springvision"]
 	path = springvision
 	url = https://github.com/leejinhyung0908-hash/springvision.git
+[submodule "springchat"]
+	path = springchat
+	url = https://github.com/leejinhyung0908-hash/springchat.git
